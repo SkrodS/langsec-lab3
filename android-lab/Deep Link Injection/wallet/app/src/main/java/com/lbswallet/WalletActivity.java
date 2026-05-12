@@ -51,7 +51,6 @@ public class WalletActivity extends Activity {
 
         webView = findViewById(R.id.walletWebView);
         webView.getSettings().setJavaScriptEnabled(true);
-        webView.addJavascriptInterface(new WalletBridge(), "WalletBridge");
         createNotificationChannel();
 
         loadStateFromPreferences();
@@ -61,10 +60,11 @@ public class WalletActivity extends Activity {
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String url = request.getUrl().toString();
 
-                if (url.startsWith("https://wallet.lbswallet.com")) {
-                    view.addJavascriptInterface(new WalletBridge(), "WalletBridge");
+                if (!DEFAULT_URL.equals(url)) {
+                    return true;
                 }
 
+                ensureWalletBridge();
                 return false;
             }
         });
@@ -74,7 +74,14 @@ public class WalletActivity extends Activity {
             deepLinkUrl = getIntent().getData().getQueryParameter("url");
         }
 
-        webView.loadUrl(deepLinkUrl != null ? deepLinkUrl : DEFAULT_URL);
+        String initialUrl = DEFAULT_URL.equals(deepLinkUrl) ? deepLinkUrl : DEFAULT_URL;
+        ensureWalletBridge();
+        webView.loadUrl(initialUrl);
+    }
+
+    private void ensureWalletBridge() {
+        webView.removeJavascriptInterface("WalletBridge");
+        webView.addJavascriptInterface(new WalletBridge(), "WalletBridge");
     }
 
     private void loadStateFromPreferences() {
