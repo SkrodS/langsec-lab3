@@ -60,8 +60,10 @@ public class WalletActivity extends Activity {
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String url = request.getUrl().toString();
 
-                if (!DEFAULT_URL.equals(url)) {
-                    return true;
+                if (isTrustedUrl(url)) {
+                    ensureWalletBridge();
+                } else {
+                    view.removeJavascriptInterface("WalletBridge");
                 }
 
                 ensureWalletBridge();
@@ -74,9 +76,19 @@ public class WalletActivity extends Activity {
             deepLinkUrl = getIntent().getData().getQueryParameter("url");
         }
 
-        String initialUrl = DEFAULT_URL.equals(deepLinkUrl) ? deepLinkUrl : DEFAULT_URL;
-        ensureWalletBridge();
+        String initialUrl = deepLinkUrl != null ? deepLinkUrl : DEFAULT_URL;
+
+        if (isTrustedUrl(initialUrl)) {
+            ensureWalletBridge();
+        } else {
+            webView.removeJavascriptInterface("WalletBridge");
+        }
+
         webView.loadUrl(initialUrl);
+    }
+
+    private boolean isTrustedUrl(String url) {
+        return DEFAULT_URL.equals(url);
     }
 
     private void ensureWalletBridge() {
